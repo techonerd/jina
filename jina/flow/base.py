@@ -466,9 +466,6 @@ class Flow(PostMixin, JAMLCompatible, ExitStack, metaclass=FlowType):
         uses: Optional[Union[str, Type['BaseExecutor'], dict]] = 'BaseExecutor',
         uses_after: Optional[Union[str, Type['BaseExecutor'], dict]] = None,
         uses_before: Optional[Union[str, Type['BaseExecutor'], dict]] = None,
-        uses_internal: Optional[
-            Union[str, Type['BaseExecutor'], dict]
-        ] = 'BaseExecutor',
         volumes: Optional[List[str]] = None,
         workspace: Optional[str] = None,
         **kwargs,
@@ -562,10 +559,6 @@ class Flow(PostMixin, JAMLCompatible, ExitStack, metaclass=FlowType):
                   - a text file stream has `.read()` interface
         :param uses_after: The executor attached after the Peas described by --uses, typically used for receiving from all parallels, accepted type follows `--uses`
         :param uses_before: The executor attached after the Peas described by --uses, typically before sending to all parallels, accepted type follows `--uses`
-        :param uses_internal: The config runs inside the Docker container.
-
-          Syntax and function are the same as `--uses`. This is designed when `--uses="docker://..."` this config is passed to
-          the Docker container.
         :param volumes: The path on the host to be mounted inside the container.
 
           Note,
@@ -920,9 +913,7 @@ class Flow(PostMixin, JAMLCompatible, ExitStack, metaclass=FlowType):
         if GATEWAY_NAME in self._pod_nodes:
             self._pod_nodes.pop(GATEWAY_NAME)
         self._build_level = FlowBuildLevel.EMPTY
-        self.logger.success(
-            f'flow is closed and all resources are released, current build level is {self._build_level}'
-        )
+        self.logger.debug(f'Flow is closed!')
         self.logger.close()
 
     def start(self):
@@ -963,7 +954,7 @@ class Flow(PostMixin, JAMLCompatible, ExitStack, metaclass=FlowType):
                 self.close()
                 raise
 
-        self.logger.info(
+        self.logger.debug(
             f'{self.num_pods} Pods (i.e. {self.num_peas} Peas) are running in this Flow'
         )
 
@@ -1302,8 +1293,6 @@ class Flow(PostMixin, JAMLCompatible, ExitStack, metaclass=FlowType):
 
     def _show_success_message(self):
 
-        self.logger.success(f'🎉 Flow is ready to use!')
-
         address_table = [
             f'\t🔗 Protocol: \t\t{colored(self.protocol, attrs="bold")}',
             f'\t🏠 Local access:\t'
@@ -1342,7 +1331,7 @@ class Flow(PostMixin, JAMLCompatible, ExitStack, metaclass=FlowType):
                 )
             )
 
-        self.logger.info('\n' + '\n'.join(address_table))
+        self.logger.info('🎉 Flow is ready to use!\n' + '\n'.join(address_table))
 
     def block(self):
         """Block the process until user hits KeyboardInterrupt"""

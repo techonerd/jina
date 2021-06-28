@@ -32,9 +32,13 @@ from ....types.routing.table import RoutingTable
 class ZEDRuntime(ZMQRuntime):
     """Runtime procedure leveraging :class:`ZmqStreamlet` for Executor."""
 
-    def __init__(self, args: 'argparse.Namespace', ctrl_addr: str):
+    def __init__(self, args: argparse.Namespace, ctrl_addr: str):
+        """Initialize private parameters and execute private loading functions.
+
+        :param args: args from CLI
+        :param ctrl_addr: control port address
+        """
         super().__init__(args, ctrl_addr)
-        """Initialize private parameters and execute private loading functions."""
         self._id = random_identity()
         self._last_active_time = time.perf_counter()
 
@@ -135,7 +139,7 @@ class ZEDRuntime(ZMQRuntime):
         elif self.request_type == 'ControlRequest':
             info_msg += f'({self.request.command}) '
         info_msg += f'{part_str} from {msg.colored_route}'
-        self.logger.info(info_msg)
+        self.logger.debug(info_msg)
 
         if self.expect_parts > 1 and self.expect_parts > len(self.partial_requests):
             # NOTE: reduce priority is higher than chain exception
@@ -287,14 +291,14 @@ class ZEDRuntime(ZMQRuntime):
             # this is the proper way to end when a terminate signal is sent
             self._zmqlet.send_message(msg)
             self._zmqlet.close()
-        except (KeyboardInterrupt) as kbex:
+        except KeyboardInterrupt as kbex:
             # save executor
-            self.logger.info(f'{kbex!r} causes the breaking from the event loop')
+            self.logger.debug(f'{kbex!r} causes the breaking from the event loop')
             self._zmqlet.send_message(msg)
             self._zmqlet.close(flush=False)
         except (SystemError, zmq.error.ZMQError) as ex:
             # save executor
-            self.logger.info(f'{ex!r} causes the breaking from the event loop')
+            self.logger.debug(f'{ex!r} causes the breaking from the event loop')
             self._zmqlet.send_message(msg)
             self._zmqlet.close()
         except MemoryOverHighWatermark:

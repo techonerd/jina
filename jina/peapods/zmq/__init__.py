@@ -10,18 +10,18 @@ import zmq.asyncio
 from zmq.eventloop.zmqstream import ZMQStream
 from zmq.ssh import tunnel_connection
 
+from ..networking import get_connect_host
 from ... import __default_host__
 from ...enums import SocketType
 from ...helper import colored, random_identity, get_readable_size, get_or_reuse_loop
 from ...importer import ImportExtensions
-from ...logging.predefined import default_logger
 from ...logging.logger import JinaLogger
+from ...logging.predefined import default_logger
 from ...proto import jina_pb2
 from ...types.message import Message
 from ...types.message.common import ControlMessage
 from ...types.request import Request
 from ...types.routing.table import RoutingTable
-from ..networking import get_connect_host
 
 
 class Zmqlet:
@@ -195,7 +195,7 @@ class Zmqlet:
             else:
                 out_sock, out_addr = None, None
 
-            self.logger.info(
+            self.logger.debug(
                 f'input {colored(in_addr, "yellow")} ({self.args.socket_in.name}) '
                 f'output {colored(out_addr, "yellow")} ({self.args.socket_out.name}) '
                 f'control over {colored(ctrl_addr, "yellow")} ({SocketType.PAIR_BIND.name})'
@@ -234,7 +234,7 @@ class Zmqlet:
 
     def print_stats(self):
         """Print out the network stats of of itself """
-        self.logger.info(
+        self.logger.debug(
             f'#sent: {self.msg_sent} '
             f'#recv: {self.msg_recv} '
             f'sent_size: {get_readable_size(self.bytes_sent)} '
@@ -413,7 +413,6 @@ class AsyncZmqlet(Zmqlet):
             self.logger.error(f'receiving message error: {ex!r}, gateway cancelled?')
 
     def __enter__(self):
-        time.sleep(0.2)  # sleep a bit until handshake is done
         return self
 
 
@@ -455,8 +454,8 @@ class ZmqStreamlet(Zmqlet):
         if not self.is_closed and self.in_sock_type == zmq.DEALER:
             try:
                 self._send_cancel_to_router(raise_exception=True)
-            except zmq.error.ZMQError as e:
-                self.logger.info(
+            except zmq.error.ZMQError:
+                self.logger.debug(
                     f'The dealer {self.name} can not unsubscribe from the router. '
                     f'In case the router is down this is expected.'
                 )
@@ -731,15 +730,8 @@ def _get_random_ipc() -> str:
 
     :return: random IPC address
     """
-    try:
-        tmp = os.environ['JINA_IPC_SOCK_TMP']
-        if not os.path.exists(tmp):
-            raise ValueError(
-                f'This directory for sockets ({tmp}) does not seems to exist.'
-            )
-        tmp = os.path.join(tmp, random_identity())
-    except KeyError:
-        tmp = tempfile.NamedTemporaryFile().name
+    tmp = tempfile.NamedTemporaryFile().name
+
     return f'ipc://{tmp}'
 
 
@@ -772,9 +764,6 @@ def _init_socket(
 
     if socket_type == SocketType.DEALER_CONNECT:
         sock.set_string(zmq.IDENTITY, identity)
-
-    # if not socket_type.is_pubsub:
-    #     sock.hwm = int(os.environ.get('JINA_SOCKET_HWM', 1))
 
     if socket_type.is_bind:
         if use_ipc:

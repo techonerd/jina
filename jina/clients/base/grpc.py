@@ -8,7 +8,7 @@ from ..base import BaseClient
 from ..helper import callback_exec
 from ..request import GeneratorSourceType
 from ...excepts import BadClient, BadClientInput
-from ...logging.profile import TimeContext, ProgressBar
+from ...logging.profile import ProgressBar
 from ...proto import jina_pb2_grpc
 from ...types.request import Response
 
@@ -41,16 +41,13 @@ class GRPCBaseClient(BaseClient):
                 ],
             ) as channel:
                 stub = jina_pb2_grpc.JinaRPCStub(channel)
-                self.logger.success(
-                    f'connected to the gateway at {self.args.host}:{self.args.port_expose}!'
+                self.logger.debug(
+                    f'connected to {self.args.host}:{self.args.port_expose}'
                 )
 
-                if self.show_progress:
-                    cm1, cm2 = ProgressBar(), TimeContext('')
-                else:
-                    cm1, cm2 = nullcontext(), nullcontext()
+                cm1 = ProgressBar() if self.show_progress else nullcontext()
 
-                with cm1 as p_bar, cm2:
+                with cm1 as p_bar:
                     async for resp in stub.Call(req_iter):
                         resp.as_typed_request(resp.request_type)
                         resp = resp.as_response()

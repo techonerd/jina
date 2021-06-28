@@ -6,7 +6,7 @@ from ..base import BaseClient, InputType
 from ..helper import callback_exec
 from ...excepts import BadClient
 from ...importer import ImportExtensions
-from ...logging.profile import TimeContext, ProgressBar
+from ...logging.profile import ProgressBar
 from ...types.request import Request
 
 
@@ -57,12 +57,11 @@ class HTTPBaseClient(BaseClient):
 
         req_iter = self._get_requests(**kwargs)
         async with aiohttp.ClientSession() as session:
-            if self.show_progress:
-                cm1, cm2 = ProgressBar(), TimeContext('')
-            else:
-                cm1, cm2 = nullcontext(), nullcontext()
+
             try:
-                with cm1 as p_bar, cm2:
+                cm1 = ProgressBar() if self.show_progress else nullcontext()
+
+                with cm1 as p_bar:
                     all_responses = []
                     for req in req_iter:
                         # fix the mismatch between pydantic model and Protobuf model
