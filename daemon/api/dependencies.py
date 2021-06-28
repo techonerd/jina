@@ -207,4 +207,4 @@ class WorkspaceDepends:
             store.update(id=self.id, value=WorkspaceState.PENDING)
             __task_queue__.put((self.id, self.files))
 
-        self.j = {self.id: store[self.id]}
+        self.item = {self.id: store[self.id]}
