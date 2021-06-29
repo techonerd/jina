@@ -14,7 +14,7 @@ from . import JINA_HUB_ROOT, JINA_HUB_CACHE_DIR
 from .helper import archive_package, download_with_resume, parse_hub_uri
 from .hubapi import install_local, exist_local
 from ..excepts import HubDownloadError
-from ..helper import colored, get_full_version, get_readable_size
+from ..helper import colored, get_full_version, get_readable_size, random_identity
 from ..importer import ImportExtensions
 from ..logging.logger import JinaLogger
 from ..logging.predefined import default_logger
@@ -97,6 +97,24 @@ class HubIO:
             self.logger.critical(f'`{self.args.path}` is not a valid path!')
             exit(1)
 
+        pkg_config_path = pkg_path / '.jina'
+        pkg_config_path.mkdir(parents=True, exist_ok=True)
+
+        local_id_file = pkg_config_path / 'local_id'
+        local_id = None
+        uuid8 = None
+        secret = None
+        if local_id_file.exists():
+            with local_id_file.open() as f:
+                local_id = f.readline().strip()
+
+            local_config_file = JINA_HUB_ROOT / f'{local_id}.json'
+            if local_config_file.exists():
+                with local_config_file.open() as f:
+                    local_config = json.load(f)
+                    uuid8 = local_config.get('uuid8', None)
+                    secret = local_config.get('secret', None)
+
         request_headers = self._get_request_header()
 
         try:
@@ -116,11 +134,11 @@ class HubIO:
                 if hasattr(self.args, 'private')
                 else False,
                 'md5sum': md5_digest,
-                'force': self.args.force,
-                'secret': self.args.secret,
+                'force': self.args.force or uuid8,
+                'secret': self.args.secret or secret,
             }
 
-            method = 'put' if self.args.force else 'post'
+            method = 'put' if (uuid8 or self.args.force) else 'post'
 
             # upload the archived executor to Jina Hub
             with TimeContext(
@@ -142,6 +160,16 @@ class HubIO:
                 secret = image['secret']
                 docker_image = image['pullPath']
                 visibility = image['visibility']
+
+                if not local_id_file.exists():
+                    local_id = str(random_identity())
+                    with local_id_file.open('w') as f:
+                        f.write(local_id)
+                local_config_file = JINA_HUB_ROOT / f'{local_id}.json'
+                if not local_config_file.exists():
+                    with local_config_file.open('w') as f:
+                        f.write(json.dumps({'uuid8': uuid8, 'secret': secret}))
+
                 usage = (
                     f'jinahub://{uuid8}'
                     if visibility == 'public'
