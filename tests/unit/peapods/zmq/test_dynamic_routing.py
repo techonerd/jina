@@ -93,8 +93,8 @@ def test_double_dynamic_routing_zmqlet():
 
     logger = logging.getLogger('zmq-test')
     with Zmqlet(args1, logger) as z1, Zmqlet(args2, logger) as z2, Zmqlet(
-        args3, logger
-    ) as z3:
+            args3, logger
+        ) as z3:
         assert z1.msg_sent == 0
         assert z2.msg_sent == 0
         assert z3.msg_sent == 0
@@ -134,7 +134,7 @@ def test_double_dynamic_routing_zmqlet():
             for j in range(number_messages):
                 z1.send_message(msg)
             time.sleep(1)
-            for i in range(number_messages):
+            for _ in range(number_messages):
                 z2.recv_message(callback)
                 z3.recv_message(callback)
 
@@ -216,8 +216,8 @@ def test_double_dynamic_routing_zmqstreamlet():
 
     logger = logging.getLogger('zmq-test')
     with ZmqStreamlet(args1, logger) as z1, ZmqStreamlet(
-        args2, logger
-    ) as z2, ZmqStreamlet(args3, logger) as z3:
+            args2, logger
+        ) as z2, ZmqStreamlet(args3, logger) as z3:
         assert z1.msg_sent == 0
         assert z2.msg_sent == 0
         assert z3.msg_sent == 0
@@ -258,7 +258,7 @@ def test_double_dynamic_routing_zmqstreamlet():
             thread.start()
 
         number_messages = 1000
-        for i in range(number_messages):
+        for _ in range(number_messages):
             z1.send_message(msg)
 
         time.sleep(0.5)

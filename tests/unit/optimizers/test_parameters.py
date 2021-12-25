@@ -28,7 +28,7 @@ def test_integer_parameter(optuna_sampler):
     def objective(trial):
         trial_parameters = {}
         parameter.update_trial_params(trial, trial_parameters)
-        assert 'JINA_DUMMY' in trial_parameters.keys()
+        assert 'JINA_DUMMY' in trial_parameters
         assert 0 <= trial_parameters['JINA_DUMMY'] <= 10
         return 0.0
 
@@ -44,7 +44,7 @@ def test_uniform_parameter(optuna_sampler):
     def objective(trial):
         trial_parameters = {}
         parameter.update_trial_params(trial, trial_parameters)
-        assert 'JINA_DUMMY' in trial_parameters.keys()
+        assert 'JINA_DUMMY' in trial_parameters
         assert 0 <= trial_parameters['JINA_DUMMY'] <= 10
         return 0.0
 
@@ -60,7 +60,7 @@ def test_log_uniform_parameter(optuna_sampler):
     def objective(trial):
         trial_parameters = {}
         parameter.update_trial_params(trial, trial_parameters)
-        assert 'JINA_DUMMY' in trial_parameters.keys()
+        assert 'JINA_DUMMY' in trial_parameters
         assert 0 <= trial_parameters['JINA_DUMMY'] <= 10
         return 0.0
 
@@ -78,7 +78,7 @@ def test_categorical_parameter(optuna_sampler):
     def objective(trial):
         trial_parameters = {}
         parameter.update_trial_params(trial, trial_parameters)
-        assert 'JINA_DUMMY' in trial_parameters.keys()
+        assert 'JINA_DUMMY' in trial_parameters
         assert trial_parameters['JINA_DUMMY'] in [f'choice-{i}' for i in range(10)]
         return 0.0
 
@@ -98,7 +98,7 @@ def test_discrete_uniform_parameter(optuna_sampler):
     def objective(trial):
         trial_parameters = {}
         parameter.update_trial_params(trial, trial_parameters)
-        assert 'JINA_DUMMY' in trial_parameters.keys()
+        assert 'JINA_DUMMY' in trial_parameters
         assert 0 <= trial_parameters['JINA_DUMMY'] <= 10
         return 0.0
 
@@ -145,19 +145,19 @@ def test_pod_alternative_parameter(optuna_sampler):
     def objective(trial):
         trial_parameters = {}
         parameter.update_trial_params(trial, trial_parameters)
-        assert 'JINA_DUMMY' in trial_parameters.keys()
+        assert 'JINA_DUMMY' in trial_parameters
         assert trial_parameters['JINA_DUMMY'] in ['pod1', 'pod2']
         if trial_parameters['JINA_DUMMY'] == 'pod1':
-            assert 'JINA_INTEGER_DUMMY_POD1' in trial_parameters.keys()
+            assert 'JINA_INTEGER_DUMMY_POD1' in trial_parameters
             assert 0 <= trial_parameters['JINA_INTEGER_DUMMY_POD1'] <= 10
-            assert 'JINA_CAT_DUMMY_POD1' in trial_parameters.keys()
+            assert 'JINA_CAT_DUMMY_POD1' in trial_parameters
             assert trial_parameters['JINA_CAT_DUMMY_POD1'] in [
                 f'choice-{i}' for i in range(10)
             ]
         if trial_parameters['JINA_DUMMY'] == 'pod2':
-            assert 'JINA_INTEGER_DUMMY_POD2' in trial_parameters.keys()
+            assert 'JINA_INTEGER_DUMMY_POD2' in trial_parameters
             assert 0 <= trial_parameters['JINA_INTEGER_DUMMY_POD2'] <= 10
-            assert 'JINA_CAT_DUMMY_POD2' in trial_parameters.keys()
+            assert 'JINA_CAT_DUMMY_POD2' in trial_parameters
             assert trial_parameters['JINA_CAT_DUMMY_POD2'] in [
                 f'choice-{i}' for i in range(10)
             ]

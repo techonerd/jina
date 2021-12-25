@@ -40,59 +40,60 @@ class ImportExtensions:
         return self
 
     def __exit__(self, exc_type, exc_val, traceback):
-        if exc_type == ModuleNotFoundError:
-            missing_module = self._pkg_name or exc_val.name
-            with open(os.path.join(__resources_path__, 'extra-requirements.txt')) as fp:
-                for v in fp:
-                    if (
-                        v.strip()
-                        and not v.startswith('#')
-                        and v.startswith(missing_module)
-                        and ':' in v
-                    ):
-                        missing_module, install_tags = v.split(':')
-                        self._tags.append(missing_module)
-                        self._tags.extend(vv.strip() for vv in install_tags.split(','))
-                        break
+        if exc_type != ModuleNotFoundError:
+            return
+        missing_module = self._pkg_name or exc_val.name
+        with open(os.path.join(__resources_path__, 'extra-requirements.txt')) as fp:
+            for v in fp:
+                if (
+                    v.strip()
+                    and not v.startswith('#')
+                    and v.startswith(missing_module)
+                    and ':' in v
+                ):
+                    missing_module, install_tags = v.split(':')
+                    self._tags.append(missing_module)
+                    self._tags.extend(vv.strip() for vv in install_tags.split(','))
+                    break
 
-            if self._tags:
-                req_msg = 'fallback to default behavior'
-                if self._required:
-                    req_msg = 'and it is required'
-                err_msg = (
-                    f'Module "{missing_module}" is not installed, {req_msg}. '
-                    f'You are trying to use an extension feature not enabled by the '
-                    'current installation.\n'
-                    'This feature is available in: '
-                )
-                from .helper import colored
-
-                err_msg += ' '.join(
-                    colored(f'[{tag}]', attrs='bold') for tag in self._tags
-                )
-                err_msg += f'\nUse {colored("pip install jina[TAG]", attrs="bold")} to enable it'
-
-            else:
-                err_msg = f'{exc_val.msg}'
-
+        if self._tags:
+            req_msg = 'fallback to default behavior'
             if self._required:
-                if self._verbose:
-                    if self._logger:
-                        self._logger.critical(err_msg)
-                        if self._help_text:
-                            self._logger.error(self._help_text)
-                    else:
-                        warnings.warn(err_msg, RuntimeWarning, stacklevel=2)
-                raise exc_val
-            else:
-                if self._verbose:
-                    if self._logger:
-                        self._logger.warning(err_msg)
-                        if self._help_text:
-                            self._logger.info(self._help_text)
-                    else:
-                        warnings.warn(err_msg, RuntimeWarning, stacklevel=2)
-                return True  # suppress the error
+                req_msg = 'and it is required'
+            err_msg = (
+                f'Module "{missing_module}" is not installed, {req_msg}. '
+                f'You are trying to use an extension feature not enabled by the '
+                'current installation.\n'
+                'This feature is available in: '
+            )
+            from .helper import colored
+
+            err_msg += ' '.join(
+                colored(f'[{tag}]', attrs='bold') for tag in self._tags
+            )
+            err_msg += f'\nUse {colored("pip install jina[TAG]", attrs="bold")} to enable it'
+
+        else:
+            err_msg = f'{exc_val.msg}'
+
+        if self._required:
+            if self._verbose:
+                if self._logger:
+                    self._logger.critical(err_msg)
+                    if self._help_text:
+                        self._logger.error(self._help_text)
+                else:
+                    warnings.warn(err_msg, RuntimeWarning, stacklevel=2)
+            raise exc_val
+        else:
+            if self._verbose:
+                if self._logger:
+                    self._logger.warning(err_msg)
+                    if self._help_text:
+                        self._logger.info(self._help_text)
+                else:
+                    warnings.warn(err_msg, RuntimeWarning, stacklevel=2)
+            return True  # suppress the error
 
 
 class PathImporter:

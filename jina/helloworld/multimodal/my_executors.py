@@ -390,9 +390,6 @@ def _crop_image(
     if how == 'center':
         w_beg = int((img_w - target_w) / 2)
         h_beg = int((img_h - target_h) / 2)
-    elif how == 'random':
-        w_beg = np.random.randint(0, img_w - target_w + 1)
-        h_beg = np.random.randint(0, img_h - target_h + 1)
     elif how == 'precise':
         assert w_beg is not None and h_beg is not None
         assert (
@@ -401,10 +398,13 @@ def _crop_image(
         assert (
             0 <= h_beg <= (img_h - target_h)
         ), f'top must be within [0, {img_h - target_h}]: {h_beg}'
+    elif how == 'random':
+        w_beg = np.random.randint(0, img_w - target_w + 1)
+        h_beg = np.random.randint(0, img_h - target_h + 1)
     else:
         raise ValueError(f'unknown input how: {how}')
     if not isinstance(w_beg, int):
-        raise ValueError(f'left must be int number between 0 and {img_w}: {left}')
+        raise ValueError(f'left must be int number between 0 and {img_w}: {w_beg}')
     if not isinstance(h_beg, int):
         raise ValueError(f'top must be int number between 0 and {img_h}: {top}')
     w_end = w_beg + target_w

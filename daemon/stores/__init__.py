@@ -19,21 +19,20 @@ def _get_store(kind: str):
     :param kind:  store kind
     :return: store object
     """
-    if kind == 'pea':
+    if kind == 'flow':
+        cls = FlowStore
+    elif kind == 'pea':
         cls = PeaStore
     elif kind == 'pod':
         cls = PodStore
-    elif kind == 'flow':
-        cls = FlowStore
     elif kind == 'workspace':
         cls = WorkspaceStore
 
-    if jinad_args.store:
-        try:
-            return cls.load()
-        except Exception:
-            return cls()
-    else:
+    if not jinad_args.store:
+        return cls()
+    try:
+        return cls.load()
+    except Exception:
         return cls()
 
 

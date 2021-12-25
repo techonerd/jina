@@ -8,7 +8,7 @@ from .logger import JinaLogger
 from ..helper import colored, get_readable_size, get_readable_time
 
 
-def used_memory(unit: int = 1024 * 1024 * 1024) -> float:
+def used_memory(unit: int = 1024**2 * 1024) -> float:
     """
     Get the memory usage of the current process.
 
@@ -265,5 +265,5 @@ class ProgressBar(TimeContext):
     def _exit_msg(self):
         speed = self.num_reqs / self.duration
         sys.stdout.write(
-            f'{f"✅ {self.num_reqs} requests done in ⏱ {self.readable_duration} 🐎 {speed:3.1f} RPS"}\n'
+            f'✅ {self.num_reqs} requests done in ⏱ {self.readable_duration} 🐎 {speed:3.1f} RPS\n'
         )

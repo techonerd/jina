@@ -70,7 +70,7 @@ def test_sharding_tail_pea(num_replicas, num_shards):
 
 def test_merging_head_pea():
     def multimodal_generator():
-        for i in range(0, 5):
+        for _ in range(5):
             document = MultimodalDocument(modality_content_map={'1': '1', '2': '2'})
             yield document
 

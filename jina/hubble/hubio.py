@@ -66,11 +66,10 @@ class HubIO:
         """
         metas, envs = get_full_version()
 
-        header = {
+        return {
             **{f'jinameta-{k}': str(v) for k, v in metas.items()},
             **envs,
         }
-        return header
 
     def push(self) -> None:
         """Push the executor pacakge to Jina Hub."""
@@ -136,19 +135,22 @@ class HubIO:
                 )
 
                 info_table = [
-                    f'\t🔑 ID:\t\t' + colored(f'{uuid8}', 'cyan'),
-                    f'\t🔒 Secret:\t'
-                    + colored(
-                        f'{secret}',
-                        'cyan',
+                    '\t🔑 ID:\t\t' + colored(f'{uuid8}', 'cyan'),
+                    (
+                        '\t🔒 Secret:\t'
+                        + colored(
+                            f'{secret}',
+                            'cyan',
+                        )
                     )
                     + colored(
                         '(PLEASE KEEP IT CAREFULLY, OTHERWISE YOU WILL LOSE CONTROL OF YOUR EXECUTOR!)',
                         'red',
                     ),
-                    f'\t📛 Alias:\t' + colored(f'{alias}', 'cyan') if alias else '/',
-                    f'\t👀 Visibility:\t' + colored(f'{visibility}', 'cyan'),
+                    '\t📛 Alias:\t' + colored(f'{alias}', 'cyan') if alias else '/',
+                    '\t👀 Visibility:\t' + colored(f'{visibility}', 'cyan'),
                 ]
+
                 self.logger.success(
                     f'🎉 Executor from `{pkg_path}` is uploaded successfully!'
                 )
@@ -201,7 +203,7 @@ class HubIO:
 
         resp = resp.json()
 
-        result = HubExecutor(
+        return HubExecutor(
             resp['id'],
             resp.get('alias', None),
             resp['tag'],
@@ -210,8 +212,6 @@ class HubIO:
             resp['package']['download'],
             resp['package']['md5'],
         )
-
-        return result
 
     def pull(self) -> None:
         """Pull the executor package from Jina Hub."""

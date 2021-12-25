@@ -48,10 +48,9 @@ class BasePea:
 
         if self.args.runtime_backend == RuntimeBackendType.THREAD:
             self.logger.warning(
-                f' Using Thread as runtime backend is not recommended for production purposes. It is '
-                f'just supposed to be used for easier debugging. Besides the performance considerations, it is'
-                f'specially dangerous to mix `Executors` running in different types of `RuntimeBackends`.'
+                ' Using Thread as runtime backend is not recommended for production purposes. It is just supposed to be used for easier debugging. Besides the performance considerations, it isspecially dangerous to mix `Executors` running in different types of `RuntimeBackends`.'
             )
+
 
         self._envs = {'JINA_POD_NAME': self.name, 'JINA_LOG_ID': self.args.identity}
         if self.args.quiet:
@@ -157,12 +156,15 @@ class BasePea:
             runtime = self._build_runtime()
         except Exception as ex:
             self.logger.error(
-                f'{ex!r} during {self.runtime_cls!r} initialization'
-                + f'\n add "--quiet-error" to suppress the exception details'
+                (
+                    f'{ex!r} during {self.runtime_cls!r} initialization'
+                    + '\n add "--quiet-error" to suppress the exception details'
+                )
                 if not self.args.quiet_error
                 else '',
                 exc_info=not self.args.quiet_error,
             )
+
         else:
             self.is_ready.set()
             with runtime:
@@ -245,12 +247,15 @@ class BasePea:
                 self.is_shutdown.wait()
             except Exception as ex:
                 self.logger.error(
-                    f'{ex!r} during {self._deactivate_runtime!r}'
-                    + f'\n add "--quiet-error" to suppress the exception details'
+                    (
+                        f'{ex!r} during {self._deactivate_runtime!r}'
+                        + '\n add "--quiet-error" to suppress the exception details'
+                    )
                     if not self.args.quiet_error
                     else '',
                     exc_info=not self.args.quiet_error,
                 )
+
 
             # if it is not daemon, block until the process/thread finish work
             if not self.args.daemon:

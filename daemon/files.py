@@ -27,7 +27,7 @@ def workspace_files(
     workdir = get_workspace_path(workspace_id)
     Path(workdir).mkdir(parents=True, exist_ok=True)
     if not files:
-        logger.warning(f'couldn\'t find any files to upload!')
+        logger.warning("couldn't find any files to upload!")
         return
     for f in files:
         dest = os.path.join(workdir, f.filename)
@@ -79,11 +79,10 @@ class DaemonFile:
     extension = '.jinad'
 
     def __init__(self, workdir: str, logger: 'JinaLogger' = None) -> None:
-        self._logger = (
-            logger
-            if logger
-            else JinaLogger(self.__class__.__name__, **vars(jinad_args))
+        self._logger = logger or JinaLogger(
+            self.__class__.__name__, **vars(jinad_args)
         )
+
         self._workdir = workdir
         self._logger.debug(
             f'analysing {self.extension} files in workdir: {self._workdir}'
@@ -226,8 +225,9 @@ class DaemonFile:
         _other_jinad_files = glob.glob(f'{Path(self._workdir)}/*{self.extension}')
         if not _other_jinad_files:
             self._logger.warning(
-                f'please add a .jinad file to manage the docker image in the workspace'
+                'please add a .jinad file to manage the docker image in the workspace'
             )
+
         elif len(_other_jinad_files) == 1:
             self.set_args(Path(_other_jinad_files[0]))
         else:

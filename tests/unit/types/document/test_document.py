@@ -45,7 +45,7 @@ def scipy_sparse_matrix(request, row, column, data):
 
 @pytest.fixture
 def tf_sparse_matrix(row, column, data):
-    indices = [(x, y) for x, y in zip(row, column)]
+    indices = list(zip(row, column))
     return tf.SparseTensor(indices=indices, values=data, dense_shape=[4, 10])
 
 
@@ -209,7 +209,7 @@ def test_request_docs_mutable_iterator():
         d.text = 'now i change it back'
 
     # iterate it again should see the change
-    for idx, d in enumerate(rpb.data.docs):
+    for d in rpb.data.docs:
         assert isinstance(d, DocumentProto)
         assert d.text == 'now i change it back'
 
@@ -1095,7 +1095,7 @@ def test_content_hash():
             d = Document(content='text' * 2, hash_content=False)
             da.append(d)
 
-        with TimeContext(f'iterating through docs without content hash'):
+        with TimeContext('iterating through docs without content hash'):
             for d in da:
                 assert not d.content_hash
 
@@ -1105,7 +1105,7 @@ def test_content_hash():
             d = Document(content='text' * 2)
             da.append(d)
 
-        with TimeContext(f'iterating through docs with content hash'):
+        with TimeContext('iterating through docs with content hash'):
             for d in da:
                 assert d.content_hash
 
@@ -1136,7 +1136,7 @@ def test_tags_update_nested_lists():
     d.tags['hey']['list'][2]['inlist'] = 'not here'
     d.tags['hoy'][0] = 1
 
-    assert d.tags['hey']['nested'] is False
-    assert d.tags['hey']['list'][1] is True
+    assert not d.tags['hey']['nested']
+    assert d.tags['hey']['list'][1]
     assert d.tags['hey']['list'][2]['inlist'] == 'not here'
     assert d.tags['hoy'][0] == 1

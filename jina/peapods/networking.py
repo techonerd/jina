@@ -42,13 +42,10 @@ def get_connect_host(
     )
 
     # for remote peas managed by jinad, always set to __docker_host__
-    if not conn_local:
+    if not conn_local or platform not in ('linux', 'linux2'):
         local_host = __docker_host__
-    elif platform in ('linux', 'linux2'):
-        local_host = __default_host__
     else:
-        local_host = __docker_host__
-
+        local_host = __default_host__
     # pod1 in local, pod2 in local (conn_docker if pod2 in docker)
     if bind_local and conn_local:
         return local_host if conn_docker else __default_host__
@@ -57,12 +54,11 @@ def get_connect_host(
     if bind_conn_same_remote:
         return local_host if conn_docker else __default_host__
 
-    if bind_local and not conn_local:
-        # in this case we are telling CONN (at remote) our local ip address
-        if connect_args.host.startswith('localhost'):
-            # this is for the "psuedo" remote tests to pass
-            return __docker_host__
-        return get_public_ip() if bind_expose_public else get_internal_ip()
-    else:
+    if not bind_local:
         # in this case we (at local) need to know about remote the BIND address
         return bind_host
+    # in this case we are telling CONN (at remote) our local ip address
+    if connect_args.host.startswith('localhost'):
+        # this is for the "psuedo" remote tests to pass
+        return __docker_host__
+    return get_public_ip() if bind_expose_public else get_internal_ip()

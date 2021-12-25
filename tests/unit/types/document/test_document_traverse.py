@@ -38,7 +38,7 @@ def test_traverse_type(doc_req):
 def test_traverse_empty_type(doc_req):
     ds = doc_req.docs.traverse([])
     assert isinstance(ds, types.GeneratorType)
-    assert len(list(ds)) == 0
+    assert not list(ds)
 
 
 def test_traverse_root(doc_req):

@@ -41,9 +41,6 @@ DocumentArraySourceType = TypeVar(
     List[jina_pb2.DocumentProto],
 )
 
-if False:
-    from ..document import Document
-
 
 class DocumentArrayGetAttrMixin:
     """A mixin that provides attributes getter in bulk """
@@ -135,18 +132,17 @@ class DocumentArray(
                     elif isinstance(doc, jina_pb2.DocumentProto):
                         self._pb_body.append(doc)
                     else:
-                        raise ValueError(f'Unexpected element in an input list')
+                        raise ValueError('Unexpected element in an input list')
             else:
                 from .memmap import DocumentArrayMemmap
 
-                if isinstance(docs, (Generator, DocumentArrayMemmap)):
-                    docs = list(docs)
-                    for doc in docs:
-                        self.append(doc)
-                else:
+                if not isinstance(docs, (Generator, DocumentArrayMemmap)):
                     raise ValueError(
                         f'DocumentArray got an unexpected input {type(docs)}'
                     )
+                docs = list(docs)
+                for doc in docs:
+                    self.append(doc)
 
     def insert(self, index: int, doc: 'Document') -> None:
         """
@@ -166,12 +162,14 @@ class DocumentArray(
             raise IndexError(f'do not support this index {key}')
 
     def __delitem__(self, index: Union[int, str, slice]):
-        if isinstance(index, int):
+        if (
+            isinstance(index, int)
+            or not isinstance(index, str)
+            and isinstance(index, slice)
+        ):
             del self._pb_body[index]
         elif isinstance(index, str):
             del self[self._id_to_index[index]]
-        elif isinstance(index, slice):
-            del self._pb_body[index]
         else:
             raise IndexError(
                 f'do not support this index type {typename(index)}: {index}'
@@ -246,7 +244,7 @@ class DocumentArray(
         """In-place reverse the sequence."""
         size = len(self._pb_body)
         hi_idx = size - 1
-        for i in range(int(size / 2)):
+        for i in range(size // 2):
             tmp = jina_pb2.DocumentProto()
             tmp.CopyFrom(self._pb_body[hi_idx])
             self._pb_body[hi_idx].CopyFrom(self._pb_body[i])
@@ -364,11 +362,7 @@ class DocumentArray(
 
         :param file: File or filename to which the data is saved.
         """
-        if hasattr(file, 'write'):
-            file_ctx = nullcontext(file)
-        else:
-            file_ctx = open(file, 'wb')
-
+        file_ctx = nullcontext(file) if hasattr(file, 'write') else open(file, 'wb')
         with file_ctx as fp:
             dap = jina_pb2.DocumentArrayProto()
             if self._pb_body:
@@ -382,11 +376,7 @@ class DocumentArray(
 
         :param file: File or filename to which the data is saved.
         """
-        if hasattr(file, 'write'):
-            file_ctx = nullcontext(file)
-        else:
-            file_ctx = open(file, 'w')
-
+        file_ctx = nullcontext(file) if hasattr(file, 'write') else open(file, 'w')
         with file_ctx as fp:
             for d in self:
                 json.dump(d.dict(), fp)
@@ -401,11 +391,7 @@ class DocumentArray(
         :return: a DocumentArray object
         """
 
-        if hasattr(file, 'read'):
-            file_ctx = nullcontext(file)
-        else:
-            file_ctx = open(file)
-
+        file_ctx = nullcontext(file) if hasattr(file, 'read') else open(file)
         with file_ctx as fp:
             from ..document import Document
 
@@ -423,14 +409,9 @@ class DocumentArray(
         :return: a DocumentArray object
         """
 
-        if hasattr(file, 'read'):
-            file_ctx = nullcontext(file)
-        else:
-            file_ctx = open(file, 'rb')
-
+        file_ctx = nullcontext(file) if hasattr(file, 'read') else open(file, 'rb')
         dap = jina_pb2.DocumentArrayProto()
 
         with file_ctx as fp:
             dap.ParseFromString(fp.read())
-            da = DocumentArray(dap.docs)
-            return da
+            return DocumentArray(dap.docs)

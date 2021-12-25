@@ -21,9 +21,7 @@ img_name = 'jina/mwu-encoder'
 
 defaulthost = '0.0.0.0'
 localhost = (
-    defaulthost
-    if (platform == "linux" or platform == "linux2")
-    else 'host.docker.internal'
+    defaulthost if platform in ["linux", "linux2"] else 'host.docker.internal'
 )
 
 

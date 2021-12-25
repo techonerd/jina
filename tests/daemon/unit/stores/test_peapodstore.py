@@ -20,13 +20,7 @@ def workspace():
     _clean_up_workspace(image_id, network_id, workspace_id, workspace_store)
 
 
-@pytest.mark.parametrize(
-    'model, store, id',
-    [
-        (PeaModel(), PeaStore, DaemonID(f'jpea')),
-        (PodModel(), PodStore, DaemonID(f'jpod')),
-    ],
-)
+@pytest.mark.parametrize('model, store, id', [(PeaModel(), PeaStore, DaemonID('jpea')), (PodModel(), PodStore, DaemonID('jpod'))])
 def test_peastore_add(model, store, id, workspace):
     s = store()
     s.add(id=id, params=model, workspace_id=workspace, ports={})

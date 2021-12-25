@@ -44,11 +44,6 @@ class FlowType(type(ExitStack), type(JAMLCompatible)):
 
 _regex_port = r'(.*?):([0-9]{1,4}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$'
 
-if False:
-    from ..executors import BaseExecutor
-    from ..clients.base import BaseClient
-    from .asyncio import AsyncFlow
-
 GATEWAY_NAME = 'gateway'
 
 
@@ -315,17 +310,16 @@ class Flow(PostMixin, JAMLCompatible, ExitStack, metaclass=FlowType):
             else:
                 endpoint = []
 
-        if isinstance(endpoint, (list, tuple)):
-            for idx, s in enumerate(endpoint):
-                if s == pod_name:
-                    raise FlowTopologyError(
-                        'the income/output of a pod can not be itself'
-                    )
-        else:
+        if not isinstance(endpoint, (list, tuple)):
             raise ValueError(f'endpoint={endpoint} is not parsable')
 
+        for s in endpoint:
+            if s == pod_name:
+                raise FlowTopologyError(
+                    'the income/output of a pod can not be itself'
+                )
         # if an endpoint is being inspected, then replace it with inspected Pod
-        endpoint = set(op_flow._inspect_pods.get(ep, ep) for ep in endpoint)
+        endpoint = {op_flow._inspect_pods.get(ep, ep) for ep in endpoint}
         return endpoint
 
     @property
@@ -352,9 +346,7 @@ class Flow(PostMixin, JAMLCompatible, ExitStack, metaclass=FlowType):
         if name not in self._pod_nodes:
             raise FlowMissingPodError(f'{name} can not be found in this Flow')
 
-        if self._last_changed_pod and name == self.last_pod:
-            pass
-        else:
+        if not self._last_changed_pod or name != self.last_pod:
             self._last_changed_pod.append(name)
 
         # graph is now changed so we need to
@@ -839,12 +831,15 @@ class Flow(PostMixin, JAMLCompatible, ExitStack, metaclass=FlowType):
             # if an endpoint is being inspected, then replace it with inspected Pod
             # but not those inspect related node
             if op_flow.args.inspect.is_keep:
-                pod.needs = set(
-                    ep if pod.role.is_inspect else op_flow._inspect_pods.get(ep, ep)
+                pod.needs = {
+                    ep
+                    if pod.role.is_inspect
+                    else op_flow._inspect_pods.get(ep, ep)
                     for ep in pod.needs
-                )
+                }
+
             else:
-                pod.needs = set(reverse_inspect_map.get(ep, ep) for ep in pod.needs)
+                pod.needs = {reverse_inspect_map.get(ep, ep) for ep in pod.needs}
 
         op_flow._set_initial_dynamic_routing_table()
 
@@ -1044,6 +1039,8 @@ class Flow(PostMixin, JAMLCompatible, ExitStack, metaclass=FlowType):
                         tail_router = node + '_TAIL'
                         start_repl[node] = (tail_router, '((fa:fa-random))')
 
+                p_r = '((%s))'
+                p_e = '[[%s]]'
                 for i in range(v.args.replicas):
                     if v.is_head_router:
                         head_replica_router = node + f'_{i}_HEAD'
@@ -1054,8 +1051,6 @@ class Flow(PostMixin, JAMLCompatible, ExitStack, metaclass=FlowType):
                         if v.args.replicas == 1:
                             start_repl[node] = (tail_replica_router, '((fa:fa-random))')
 
-                    p_r = '((%s))'
-                    p_e = '[[%s]]'
                     if v.args.replicas > 1:
                         mermaid_graph.append(
                             f'\t{head_router}{p_r % "head"}:::pea-->{head_replica_router}{p_e % "replica_head"}:::pea'
@@ -1109,23 +1104,20 @@ class Flow(PostMixin, JAMLCompatible, ExitStack, metaclass=FlowType):
                     line_st = '-.->'
 
                 mermaid_graph.append(
-                    f'{_s[0]}{_s[1]}:::{str(_s_role)} {line_st} {edge_str}{_e[0]}{_e[1]}:::{str(_e_role)}'
+                    f'{_s[0]}{_s[1]}:::{_s_role} {line_st} {edge_str}{_e[0]}{_e[1]}:::{_e_role}'
                 )
+
+        mermaid_graph.append(f'classDef {PodRoleType.POD} fill:#32C8CD,stroke:#009999')
+        mermaid_graph.append(f'classDef {PodRoleType.INSPECT} fill:#ff6666,color:#fff')
         mermaid_graph.append(
-            f'classDef {str(PodRoleType.POD)} fill:#32C8CD,stroke:#009999'
+            f'classDef {PodRoleType.JOIN_INSPECT} fill:#ff6666,color:#fff'
         )
+
+        mermaid_graph.append(f'classDef {PodRoleType.GATEWAY} fill:#6E7278,color:#fff')
         mermaid_graph.append(
-            f'classDef {str(PodRoleType.INSPECT)} fill:#ff6666,color:#fff'
+            f'classDef {PodRoleType.INSPECT_AUX_PASS} fill:#fff,color:#000,stroke-dasharray: 5 5'
         )
-        mermaid_graph.append(
-            f'classDef {str(PodRoleType.JOIN_INSPECT)} fill:#ff6666,color:#fff'
-        )
-        mermaid_graph.append(
-            f'classDef {str(PodRoleType.GATEWAY)} fill:#6E7278,color:#fff'
-        )
-        mermaid_graph.append(
-            f'classDef {str(PodRoleType.INSPECT_AUX_PASS)} fill:#fff,color:#000,stroke-dasharray: 5 5'
-        )
+
         mermaid_graph.append('classDef pea fill:#009999,stroke:#1E6E73')
         return '\n'.join(mermaid_graph)
 
@@ -1295,41 +1287,39 @@ class Flow(PostMixin, JAMLCompatible, ExitStack, metaclass=FlowType):
 
         address_table = [
             f'\t🔗 Protocol: \t\t{colored(self.protocol, attrs="bold")}',
-            f'\t🏠 Local access:\t'
-            + colored(f'{self.host}:{self.port_expose}', 'cyan', attrs='underline'),
-            f'\t🔒 Private network:\t'
-            + colored(
-                f'{self.address_private}:{self.port_expose}',
-                'cyan',
-                attrs='underline',
+            (
+                '\t🏠 Local access:\t'
+                + colored(
+                    f'{self.host}:{self.port_expose}', 'cyan', attrs='underline'
+                )
+            ),
+            (
+                '\t🔒 Private network:\t'
+                + colored(
+                    f'{self.address_private}:{self.port_expose}',
+                    'cyan',
+                    attrs='underline',
+                )
             ),
         ]
+
         if self.address_public:
-            address_table.append(
-                f'\t🌐 Public address:\t'
-                + colored(
+            address_table.append(('\t🌐 Public address:\t' + colored(
                     f'{self.address_public}:{self.port_expose}',
                     'cyan',
                     attrs='underline',
-                )
-            )
+                )))
         if self.protocol == GatewayProtocolType.HTTP:
-            address_table.append(
-                f'\t💬 Swagger UI:\t\t'
-                + colored(
+            address_table.append(('\t💬 Swagger UI:\t\t' + colored(
                     f'http://localhost:{self.port_expose}/docs',
                     'cyan',
                     attrs='underline',
-                )
-            )
-            address_table.append(
-                f'\t📚 Redoc:\t\t'
-                + colored(
+                )))
+            address_table.append(('\t📚 Redoc:\t\t' + colored(
                     f'http://localhost:{self.port_expose}/redoc',
                     'cyan',
                     attrs='underline',
-                )
-            )
+                )))
 
         self.logger.info('🎉 Flow is ready to use!\n' + '\n'.join(address_table))
 

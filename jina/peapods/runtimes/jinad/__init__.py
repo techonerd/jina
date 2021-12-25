@@ -109,7 +109,7 @@ class JinadRuntime(AsyncZMQRuntime):
                 )
                 break
             else:
-                raise RuntimeError(f'remote workspace creation failed')
+                raise RuntimeError('remote workspace creation failed')
 
     @cached_property
     def _remote_id(self) -> Optional[str]:

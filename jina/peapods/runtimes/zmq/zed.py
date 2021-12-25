@@ -93,7 +93,7 @@ class ZEDRuntime(ZMQRuntime):
             )
             raise ExecutorFailToLoad from ex
         except FileNotFoundError as ex:
-            self.logger.error(f'fail to load file dependency')
+            self.logger.error('fail to load file dependency')
             raise ExecutorFailToLoad from ex
         except Exception as ex:
             self.logger.critical(f'can not load the executor from {self.args.uses}')
@@ -325,12 +325,15 @@ class ZEDRuntime(ZMQRuntime):
             else:
                 msg.add_exception(ex, executor=getattr(self, '_executor'))
                 self.logger.error(
-                    f'{ex!r}'
-                    + f'\n add "--quiet-error" to suppress the exception details'
+                    (
+                        f'{ex!r}'
+                        + '\n add "--quiet-error" to suppress the exception details'
+                    )
                     if not self.args.quiet_error
                     else '',
                     exc_info=not self.args.quiet_error,
                 )
+
 
             self._zmqlet.send_message(msg)
 
@@ -379,14 +382,12 @@ class ZEDRuntime(ZMQRuntime):
 
         :return: expected number of partial messages
         """
-        if self.message.is_data_request:
-            if self.args.socket_in == SocketType.ROUTER_BIND:
-                graph = RoutingTable(self._message.envelope.routing_table)
-                return graph.active_target_pod.expected_parts
-            else:
-                return self.args.num_part
-        else:
+        if not self.message.is_data_request:
             return 1
+        if self.args.socket_in != SocketType.ROUTER_BIND:
+            return self.args.num_part
+        graph = RoutingTable(self._message.envelope.routing_table)
+        return graph.active_target_pod.expected_parts
 
     @property
     def partial_requests(self) -> List['Request']:

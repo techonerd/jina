@@ -9,9 +9,6 @@ from ....types.message import Message
 
 __all__ = ['PrefetchCaller', 'PrefetchMixin']
 
-if False:
-    from ...zmq import AsyncZmqlet
-
 
 class PrefetchMixin(ABC):
     """JinaRPCServicer """

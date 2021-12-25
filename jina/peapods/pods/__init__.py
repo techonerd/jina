@@ -94,9 +94,7 @@ class BasePod(ExitFIFO):
         super().__init__()
         args.upload_files = BasePod._set_upload_files(args)
         self.args = args
-        self.needs = (
-            needs if needs else set()
-        )  #: used in the :class:`jina.flow.Flow` to build the graph
+        self.needs = needs or set()
 
         self.is_head_router = False
         self.is_tail_router = False
@@ -220,13 +218,8 @@ class BasePod(ExitFIFO):
         if as_router:
             _head_args.uses = args.uses_before or __default_executor__
 
-        if as_router:
             _head_args.pea_role = PeaRoleType.HEAD
-            if args.name:
-                _head_args.name = f'{args.name}/head'
-            else:
-                _head_args.name = f'head'
-
+            _head_args.name = f'{args.name}/head' if args.name else 'head'
         # in any case, if header is present, it represent this Pod to consume `num_part`
         # the following peas inside the pod will have num_part=1
         args.num_part = 1
@@ -254,10 +247,7 @@ class BasePod(ExitFIFO):
 
         if as_router:
             _tail_args.uses = args.uses_after or __default_executor__
-            if args.name:
-                _tail_args.name = f'{args.name}/tail'
-            else:
-                _tail_args.name = f'tail'
+            _tail_args.name = f'{args.name}/tail' if args.name else 'tail'
             _tail_args.pea_role = PeaRoleType.TAIL
             _tail_args.num_part = 1 if polling_type.is_push else args.parallel
 
@@ -310,11 +300,7 @@ class Pod(BasePod):
     ):
         super().__init__(args, needs)
         self.peas = []  # type: List['BasePea']
-        if isinstance(args, Dict):
-            # This is used when a Pod is created in a remote context, where peas & their connections are already given.
-            self.peas_args = args
-        else:
-            self.peas_args = self._parse_args(args)
+        self.peas_args = args if isinstance(args, Dict) else self._parse_args(args)
         self._activated = False
 
     @property
@@ -482,8 +468,6 @@ class Pod(BasePod):
             for _args in self._fifo_args:
                 _args.noblock_on_start = True
                 self._enter_pea(BasePea(_args))
-            # now rely on higher level to call `wait_start_success`
-            return self
         else:
             try:
                 for _args in self._fifo_args:
@@ -493,7 +477,9 @@ class Pod(BasePod):
             except:
                 self.close()
                 raise
-            return self
+
+        # now rely on higher level to call `wait_start_success`
+        return self
 
     def wait_start_success(self) -> None:
         """Block until all peas starts successfully.
@@ -545,13 +531,9 @@ class Pod(BasePod):
         tail_args: Namespace = None,
     ) -> List[Namespace]:
         result = []
-        _host_list = (
-            args.peas_hosts
-            if args.peas_hosts
-            else [
+        _host_list = args.peas_hosts or [
                 args.host,
             ]
-        )
 
         for idx, pea_host in zip(range(args.parallel), cycle(_host_list)):
             _args = copy.deepcopy(args)

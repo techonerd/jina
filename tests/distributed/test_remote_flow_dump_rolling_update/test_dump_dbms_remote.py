@@ -38,8 +38,7 @@ def _path_size_remote(this_dump_path, container_id):
         f'docker exec {container_id} /bin/bash -c "du -sh {this_dump_path}" > dump_size.txt'
     )
     contents = open('dump_size.txt').readline()
-    dir_size = float(contents.split('K')[0].split('M')[0])
-    return dir_size
+    return float(contents.split('K')[0].split('M')[0])
 
 
 def _create_flows(ip):
@@ -122,8 +121,7 @@ def test_dump_dbms_remote(docker_compose):
 
 def get_container_id(flow_id, jinad_ip):
     response = requests.get(f'http://{jinad_ip}:{JINAD_PORT}/flows/{flow_id}')
-    container_id = response.json()['metadata']['container_id']
-    return container_id
+    return response.json()['metadata']['container_id']
 
 
 def _send_rest_request(
@@ -173,7 +171,7 @@ def _jinad_dump(pod_name, dump_path, shards, url):
         'shards': shards,
     }
     # url params
-    logger.info(f'sending dump request')
+    logger.info('sending dump request')
     _send_rest_request(
         REST_PORT_DBMS,
         'post',
@@ -192,6 +190,6 @@ def _jinad_rolling_update(pod_name, dump_path, url):
         'dump_path': dump_path,
     }
     # url params
-    logger.info(f'sending PUT to roll update')
+    logger.info('sending PUT to roll update')
     r = requests.put(url, params=params)
     assert r.status_code == 200

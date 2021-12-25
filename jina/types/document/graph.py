@@ -11,10 +11,6 @@ from ...logging.predefined import default_logger
 
 __all__ = ['GraphDocument']
 
-if False:
-    from scipy.sparse import coo_matrix
-    from dgl import DGLGraph
-
 
 class GraphDocument(Document):
     """
@@ -64,11 +60,7 @@ class GraphDocument(Document):
 
         if JINA_GLOBAL.scipy_installed is None:
             JINA_GLOBAL.scipy_installed = False
-            with ImportExtensions(
-                required=True,
-                pkg_name='scipy',
-                help_text=f'GraphDocument requires scipy to be installed for sparse matrix support.',
-            ):
+            with ImportExtensions(required=True, pkg_name='scipy', help_text='GraphDocument requires scipy to be installed for sparse matrix support.'):
                 JINA_GLOBAL.scipy_installed = True
 
     def add_node(self, node: 'Document'):
@@ -114,18 +106,18 @@ class GraphDocument(Document):
             for edge_id, edge_features_key in reversed(edges_to_remove):
                 self._remove_edge_id(edge_id, edge_features_key)
 
-            if self.num_edges > 0:
-                row = np.copy(self.adjacency.row)
-                col = np.copy(self.adjacency.col)
-                data = np.copy(self.adjacency.data)
-                for i in range(self.num_edges):
-                    if self.adjacency.row[i] > offset:
-                        row[i] = row[i] - 1
-                    if self.adjacency.col[i] > offset:
-                        col[i] = col[i] - 1
-                SparseNdArray(
-                    self._pb_body.graph.adjacency, sp_format='coo'
-                ).value = coo_matrix((data, (row, col)))
+        if self.num_edges > 0:
+            row = np.copy(self.adjacency.row)
+            col = np.copy(self.adjacency.col)
+            data = np.copy(self.adjacency.data)
+            for i in range(self.num_edges):
+                if self.adjacency.row[i] > offset:
+                    row[i] = row[i] - 1
+                if self.adjacency.col[i] > offset:
+                    col[i] = col[i] - 1
+            SparseNdArray(
+                self._pb_body.graph.adjacency, sp_format='coo'
+            ).value = coo_matrix((data, (row, col)))
 
         del self.nodes[offset]
         self._node_id_to_offset = {
@@ -397,22 +389,14 @@ class GraphDocument(Document):
 
         if JINA_GLOBAL.dgl_installed is None:
             JINA_GLOBAL.dgl_installed = False
-            with ImportExtensions(
-                required=True,
-                pkg_name='dgl',
-                help_text=f'to_dgl_graph method requires dgl to be installed',
-            ):
+            with ImportExtensions(required=True, pkg_name='dgl', help_text='to_dgl_graph method requires dgl to be installed'):
                 import dgl
 
                 JINA_GLOBAL.dgl_installed = True
 
         if JINA_GLOBAL.torch_installed is None:
             JINA_GLOBAL.torch_installed = False
-            with ImportExtensions(
-                required=True,
-                pkg_name='torch',
-                help_text=f'to_dgl_graph method requires torch to be installed',
-            ):
+            with ImportExtensions(required=True, pkg_name='torch', help_text='to_dgl_graph method requires torch to be installed'):
                 import torch
 
                 JINA_GLOBAL.torch_installed = True
@@ -446,7 +430,7 @@ class GraphDocument(Document):
             for (row, col) in zip(self.adjacency.row, self.adjacency.col):
                 yield self.nodes[row.item()], self.nodes[col.item()]
         else:
-            default_logger.debug(f'Trying to iterate over a graph without edges')
+            default_logger.debug('Trying to iterate over a graph without edges')
 
     def __mermaid_str__(self) -> str:
 
@@ -455,10 +439,7 @@ class GraphDocument(Document):
 
         results = []
         printed_ids = set()
-        _node_id_node_mermaid_id = {}
-
-        for node in self.nodes:
-            _node_id_node_mermaid_id[node.id] = node._mermaid_id
+        _node_id_node_mermaid_id = {node.id: node._mermaid_id for node in self.nodes}
 
         for in_node, out_node in self:
 

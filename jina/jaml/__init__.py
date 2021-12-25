@@ -138,11 +138,8 @@ class JAML:
 
         :return: tags
         """
-        return list(
-            v[1:]
-            for v in set(JinaLoader.yaml_constructors.keys())
-            if v and v.startswith('!')
-        )
+        return [v[1:] for v in set(JinaLoader.yaml_constructors.keys())
+                if v and v.startswith('!')]
 
     @staticmethod
     def load_no_tags(stream, **kwargs):
@@ -153,7 +150,7 @@ class JAML:
         :param kwargs: other kwargs
         :return: the Python object
         """
-        safe_yml = JAML.escape('\n'.join(v for v in stream))
+        safe_yml = JAML.escape('\n'.join(stream))
         return JAML.load(safe_yml, **kwargs)
 
     @staticmethod
@@ -184,7 +181,7 @@ class JAML:
                         p.__dict__[k] = SimpleNamespace()
                         _scan(v, p.__dict__[k])
                     elif isinstance(v, list):
-                        p.__dict__[k] = list()
+                        p.__dict__[k] = []
                         _scan(v, p.__dict__[k])
                     else:
                         p.__dict__[k] = v
@@ -204,22 +201,20 @@ class JAML:
                 for k, v in sub_d.items():
                     if isinstance(v, (dict, list)):
                         _replace(v, p.__dict__[k], resolve_ref)
-                    else:
-                        if isinstance(v, str):
-                            if resolve_ref and internal_var_regex.findall(v):
-                                sub_d[k] = _resolve(v, p)
-                            else:
-                                sub_d[k] = _sub(v)
+                    elif isinstance(v, str):
+                        if resolve_ref and internal_var_regex.findall(v):
+                            sub_d[k] = _resolve(v, p)
+                        else:
+                            sub_d[k] = _sub(v)
             elif isinstance(sub_d, list):
                 for idx, v in enumerate(sub_d):
                     if isinstance(v, (dict, list)):
                         _replace(v, p[idx], resolve_ref)
-                    else:
-                        if isinstance(v, str):
-                            if resolve_ref and internal_var_regex.findall(v):
-                                sub_d[idx] = _resolve(v, p)
-                            else:
-                                sub_d[idx] = _sub(v)
+                    elif isinstance(v, str):
+                        if resolve_ref and internal_var_regex.findall(v):
+                            sub_d[idx] = _resolve(v, p)
+                        else:
+                            sub_d[idx] = _sub(v)
 
         def _sub(v):
             org_v = v
@@ -508,26 +503,25 @@ class JAMLCompatible(metaclass=JAMLCompatibleType):
         with stream as fp:
             # first load yml with no tag
             no_tag_yml = JAML.load_no_tags(fp)
-            if no_tag_yml:
-                no_tag_yml.update(**kwargs)
-                if override_with is not None:
-                    with_params = no_tag_yml.get('with', None)
-                    if with_params:
-                        with_params.update(**override_with)
-                    else:
-                        with_params = override_with
-                    no_tag_yml.update(with_params)
-                if override_metas is not None:
-                    metas_params = no_tag_yml.get('metas', None)
-                    if metas_params:
-                        metas_params.update(**override_metas)
-                    else:
-                        metas_params = override_metas
-                    no_tag_yml.update(metas_params)
-            else:
+            if not no_tag_yml:
                 raise BadConfigSource(
                     f'can not construct {cls} from an empty {source}. nothing to read from there'
                 )
+            no_tag_yml.update(**kwargs)
+            if override_with is not None:
+                with_params = no_tag_yml.get('with', None)
+                if with_params:
+                    with_params.update(**override_with)
+                else:
+                    with_params = override_with
+                no_tag_yml.update(with_params)
+            if override_metas is not None:
+                metas_params = no_tag_yml.get('metas', None)
+                if metas_params:
+                    metas_params.update(**override_metas)
+                else:
+                    metas_params = override_metas
+                no_tag_yml.update(metas_params)
             if substitute:
                 # expand variables
                 no_tag_yml = JAML.expand_dict(no_tag_yml, context)

@@ -575,7 +575,7 @@ def test_flow_identity_override():
     f = Flow(identity='123456').add().add(parallel=2).add(parallel=2)
 
     with f:
-        assert len(set(p.args.identity for _, p in f)) == 1
+        assert len({p.args.identity for _, p in f}) == 1
 
     y = '''
 !Flow
@@ -591,7 +591,7 @@ pods:
         p.args.identity = '1234'
 
     with f:
-        assert len(set(p.args.identity for _, p in f)) == 2
+        assert len({p.args.identity for _, p in f}) == 2
         for _, p in f:
             if p.args.identity != '1234':
                 assert p.name == 'gateway'

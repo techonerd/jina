@@ -123,9 +123,6 @@ def to_datauri(
     else:
         from urllib.parse import quote_from_bytes, quote
 
-        if binary:
-            encoded_data = quote_from_bytes(data)
-        else:
-            encoded_data = quote(data)
+        encoded_data = quote_from_bytes(data) if binary else quote(data)
     parts.extend([',', encoded_data])
     return ''.join(parts)

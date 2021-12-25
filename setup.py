@@ -16,7 +16,7 @@ elif sys.version_info >= (3, 9, 0):
     py_tag = PY39
 elif sys.version_info >= (3, 8, 0):
     py_tag = PY38
-elif sys.version_info >= (3, 7, 0):
+else:
     py_tag = PY37
 
 if (3, 7, 0) <= sys.version_info < (3, 8, 0):
@@ -72,7 +72,7 @@ def get_extra_requires(path, add_all=True):
 
             # add tag `all` at the end
             if add_all:
-                extra_deps['all'] = set(vv for v in extra_deps.values() for vv in v)
+                extra_deps['all'] = {vv for v in extra_deps.values() for vv in v}
                 extra_deps['match-py-ver'] = extra_deps[py_tag]
 
         return extra_deps

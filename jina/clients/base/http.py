@@ -100,4 +100,4 @@ class HTTPBaseClient(BaseClient):
                             p_bar.update()
                         yield resp
             except aiohttp.client_exceptions.ClientConnectorError:
-                self.logger.warning(f'Client got disconnected from the HTTP server')
+                self.logger.warning('Client got disconnected from the HTTP server')

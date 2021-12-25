@@ -40,39 +40,6 @@ from ...importer import ImportExtensions
 from ...logging.predefined import default_logger
 from ...proto import jina_pb2
 
-if False:
-    from ..arrays.chunk import ChunkArray
-    from ..arrays.match import MatchArray
-
-    from scipy.sparse import coo_matrix
-
-    # fix type-hint complain for sphinx and flake
-    import scipy
-    import tensorflow as tf
-    import torch
-
-    ArrayType = TypeVar(
-        'ArrayType',
-        np.ndarray,
-        scipy.sparse.csr_matrix,
-        scipy.sparse.coo_matrix,
-        scipy.sparse.bsr_matrix,
-        scipy.sparse.csc_matrix,
-        torch.sparse_coo_tensor,
-        tf.SparseTensor,
-    )
-
-    SparseArrayType = TypeVar(
-        'SparseArrayType',
-        np.ndarray,
-        scipy.sparse.csr_matrix,
-        scipy.sparse.coo_matrix,
-        scipy.sparse.bsr_matrix,
-        scipy.sparse.csc_matrix,
-        torch.sparse_coo_tensor,
-        tf.SparseTensor,
-    )
-
 __all__ = ['Document', 'DocumentContentType', 'DocumentSourceType']
 DIGEST_SIZE = 8
 
@@ -378,12 +345,13 @@ class Document(ProtoTypeMixin):
             *. ``destination`` will be modified in place, ``source`` will be unchanged.
             *. the ``fields`` has value in destination while not in source will be preserved.
         """
-        # We do a safe update: only update existent (value being set) fields from source.
-        fields_can_be_updated = []
         # ListFields returns a list of (FieldDescriptor, value) tuples for present fields.
         present_fields = source._pb_body.ListFields()
-        for field_descriptor, _ in present_fields:
-            fields_can_be_updated.append(field_descriptor.name)
+        # We do a safe update: only update existent (value being set) fields from source.
+        fields_can_be_updated = [
+            field_descriptor.name for field_descriptor, _ in present_fields
+        ]
+
         if not fields:
             fields = fields_can_be_updated  # if `fields` empty, update all fields.
         for field in fields:
@@ -715,19 +683,18 @@ class Document(ProtoTypeMixin):
             elif isinstance(v, dict) and k not in _special_mapped_keys:
                 self._pb_body.ClearField(k)
                 getattr(self._pb_body, k).update(v)
-            else:
-                if (
+            elif (
                     hasattr(Document, k)
                     and isinstance(getattr(Document, k), property)
                     and getattr(Document, k).fset
                 ):
-                    # if class property has a setter
-                    setattr(self, k, v)
-                elif hasattr(self._pb_body, k):
-                    # no property setter, but proto has this attribute so fallback to proto
-                    setattr(self._pb_body, k, v)
-                else:
-                    raise AttributeError(f'{k} is not recognized')
+                # if class property has a setter
+                setattr(self, k, v)
+            elif hasattr(self._pb_body, k):
+                # no property setter, but proto has this attribute so fallback to proto
+                setattr(self._pb_body, k, v)
+            else:
+                raise AttributeError(f'{k} is not recognized')
 
     def get_attributes(self, *fields: str) -> Union[Any, List[Any]]:
         """Bulk fetch Document fields and return a list of the values of these fields
@@ -854,10 +821,7 @@ class Document(ProtoTypeMixin):
         elif value:
             # given but not recognizable, do best guess
             r = mimetypes.guess_type(f'*.{value}')[0]
-            if r:
-                self._pb_body.mime_type = r
-            else:
-                self._pb_body.mime_type = value
+            self._pb_body.mime_type = r or value
 
     def __enter__(self):
         return self
@@ -1280,14 +1244,13 @@ class Document(ProtoTypeMixin):
         :param kwargs: Extra keyword arguments
         :return: JSON string of the object
         """
-        if prettify_ndarrays:
-            import json
-
-            d = super().dict(*args, **kwargs)
-            self._prettify_doc_dict(d)
-            return json.dumps(d, sort_keys=True, **kwargs)
-        else:
+        if not prettify_ndarrays:
             return super().json(*args, **kwargs)
+        import json
+
+        d = super().dict(*args, **kwargs)
+        self._prettify_doc_dict(d)
+        return json.dumps(d, sort_keys=True, **kwargs)
 
     @property
     def non_empty_fields(self) -> Tuple[str]:
@@ -1331,11 +1294,11 @@ class Document(ProtoTypeMixin):
         return list(set(support_keys))
 
     def __getattr__(self, item):
-        if hasattr(self._pb_body, item):
-            value = getattr(self._pb_body, item)
-        else:
-            value = dunder_get(self._pb_body, item)
-        return value
+        return (
+            getattr(self._pb_body, item)
+            if hasattr(self._pb_body, item)
+            else dunder_get(self._pb_body, item)
+        )
 
 
 def _is_uri(value: str) -> bool:
