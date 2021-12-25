@@ -70,7 +70,7 @@ class CompoundPod(BasePod):
 
         :return: total number of peas including head and tail
         """
-        return sum([replica.num_peas for replica in self.replicas]) + 2
+        return sum(replica.num_peas for replica in self.replicas) + 2
 
     def __eq__(self, other: 'CompoundPod'):
         return self.num_peas == other.num_peas and self.name == other.name
@@ -101,8 +101,6 @@ class CompoundPod(BasePod):
             tail_args.noblock_on_start = True
             self.tail_pea = Pea(tail_args)
             self._enter_pea(self.tail_pea)
-            # now rely on higher level to call `wait_start_success`
-            return self
         else:
             try:
                 head_args = self.head_args
@@ -117,7 +115,9 @@ class CompoundPod(BasePod):
             except:
                 self.close()
                 raise
-            return self
+
+        # now rely on higher level to call `wait_start_success`
+        return self
 
     def wait_start_success(self) -> None:
         """
@@ -187,13 +187,9 @@ class CompoundPod(BasePod):
         :return: list of arguments for the replicas
         """
         result = []
-        _host_list = (
-            args.peas_hosts
-            if args.peas_hosts
-            else [
+        _host_list = args.peas_hosts or [
                 args.host,
             ]
-        )
         host_generator = cycle(_host_list)
         for idx in range(args.replicas):
             _args = copy.deepcopy(args)

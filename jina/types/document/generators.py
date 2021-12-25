@@ -8,9 +8,6 @@ from typing import Optional, Generator, Union, List, Iterable, Dict
 
 import numpy as np
 
-if False:
-    from . import Document
-
 
 def from_ndarray(
     array: 'np.ndarray',

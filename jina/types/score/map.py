@@ -95,8 +95,7 @@ class NamedScoreMapping(ProtoTypeMixin, MutableMapping):
         return key in list(self._pb_body.values.keys())
 
     def __iter__(self):
-        for key in self._pb_body.values.keys():
-            yield key
+        yield from self._pb_body.values.keys()
 
     def __len__(self):
         return len(list(self._pb_body.values.values()))

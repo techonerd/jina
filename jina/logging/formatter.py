@@ -5,9 +5,6 @@ from logging import Formatter
 
 from ..helper import colored
 
-if False:
-    from logging import LogRecord
-
 
 class PlainFormatter(Formatter):
     """Remove all control chars from the log and format it as plain text, also restrict the max-length of msg to 512."""

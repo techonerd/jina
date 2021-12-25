@@ -75,8 +75,6 @@ def test_input_csv_from_strings():
 def test_input_lines_with_empty_filepath_and_lines():
     with pytest.raises(ValueError):
         lines = from_lines(lines=None, filepath=None)
-        for _ in lines:
-            pass
 
 
 def test_input_lines_with_jsonlines_docs():

@@ -210,13 +210,12 @@ class DocumentArrayMemmap(TraversableSequence, DocumentArrayGetAttrMixin, Itr):
 
     def __setitem__(self, key: Union[int, str], value: 'Document') -> None:
         if isinstance(key, int):
-            if 0 <= key < len(self):
-                # override an existing entry
-                self.append(value)
-                self._header_map[self._int2str_id(key)] = self._header_map[value.id]
-                del self[value.id]
-            else:
+            if not 0 <= key < len(self):
                 raise IndexError(f'`key`={key} is out of range')
+            # override an existing entry
+            self.append(value)
+            self._header_map[self._int2str_id(key)] = self._header_map[value.id]
+            del self[value.id]
         elif isinstance(key, str):
             value.id = key
             self.append(value)

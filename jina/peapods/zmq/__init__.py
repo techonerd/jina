@@ -112,14 +112,9 @@ class Zmqlet:
         ctrl_with_ipc = (os.name != 'nt') and ctrl_with_ipc
         if ctrl_with_ipc:
             return _get_random_ipc(), ctrl_with_ipc
-        else:
-            host_out = host
-            if '@' in host_out:
-                # user@hostname
-                host_out = host_out.split('@')[-1]
-            else:
-                host_out = host_out
-            return f'tcp://{host_out}:{port_ctrl}', ctrl_with_ipc
+        host_out = host
+        host_out = host_out.split('@')[-1] if '@' in host_out else host_out
+        return f'tcp://{host_out}:{port_ctrl}', ctrl_with_ipc
 
     def _pull(self, interval: int = 1):
         socks = dict(self.poller.poll(interval))
@@ -528,12 +523,7 @@ def send_ctrl_message(
     :param timeout: the waiting time (in ms) for the response
     :return: received message
     """
-    if isinstance(cmd, str):
-        # we assume ControlMessage as default
-        msg = ControlMessage(cmd)
-    else:
-        msg = cmd
-
+    msg = ControlMessage(cmd) if isinstance(cmd, str) else cmd
     # control message is short, set a timeout and ask for quick response
     with zmq.Context() as ctx:
         ctx.setsockopt(zmq.LINGER, 0)
@@ -788,11 +778,7 @@ def _init_socket(
                     )
                     raise
     else:
-        if port is None:
-            address = host
-        else:
-            address = f'tcp://{host}:{port}'
-
+        address = host if port is None else f'tcp://{host}:{port}'
         # note that ssh only takes effect on CONNECT, not BIND
         # that means control socket setup does not need ssh
         if ssh_server:

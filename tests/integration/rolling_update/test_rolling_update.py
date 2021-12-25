@@ -152,14 +152,14 @@ def test_vector_indexer_thread(config, docs, mocker, reraise):
 
 def test_workspace(config, tmpdir, docs):
     with Flow().add(
-        name='pod1',
-        uses=DummyMarkExecutor,
-        workspace=str(tmpdir),
-        replicas=2,
-        parallel=3,
-    ) as flow:
+            name='pod1',
+            uses=DummyMarkExecutor,
+            workspace=str(tmpdir),
+            replicas=2,
+            parallel=3,
+        ) as flow:
         # in practice, we don't send index requests to the compound pod this is just done to test the workspaces
-        for i in range(10):
+        for _ in range(10):
             flow.index(docs)
 
     # validate created workspaces
@@ -195,14 +195,13 @@ def test_port_configuration(replicas_and_parallel):
 
     def get_outer_ports(pod, head_args, tail_args, middle_args):
 
-        if not 'replicas' in pod.args or int(pod.args.replicas) == 1:
-            if not 'parallel' in pod.args or int(pod.args.parallel) == 1:
-                assert tail_args is None
-                assert head_args is None
-                replica = middle_args[0]  # there is only one
-                return replica.port_in, replica.port_out
-            else:
+        if 'replicas' not in pod.args or int(pod.args.replicas) == 1:
+            if 'parallel' in pod.args and int(pod.args.parallel) != 1:
                 return pod.head_args.port_in, pod.tail_args.port_out
+            assert tail_args is None
+            assert head_args is None
+            replica = middle_args[0]  # there is only one
+            return replica.port_in, replica.port_out
         else:
             assert pod.args.replicas == len(middle_args)
             return pod.head_args.port_in, pod.tail_args.port_out

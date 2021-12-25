@@ -113,13 +113,13 @@ class DaemonClient:
                     except json.decoder.JSONDecodeError:
                         continue
         except websockets.exceptions.ConnectionClosedOK:
-            self.logger.warning(f'log streaming is disconnected')
+            self.logger.warning('log streaming is disconnected')
         except websockets.exceptions.WebSocketException as e:
             self.logger.error(
                 f'log streaming is disabled, you won\'t see logs on the remote\n Reason: {e!r}'
             )
         except asyncio.CancelledError:
-            self.logger.warning(f'log streaming is cancelled')
+            self.logger.warning('log streaming is cancelled')
         finally:
             for l in all_remote_loggers.values():
                 l.close()
@@ -229,7 +229,7 @@ class PeaDaemonClient(DaemonClient):
                 return rj
             elif r.status_code == 400:
                 # known internal error
-                rj_body = '\n'.join(j for j in rj['body'])
+                rj_body = '\n'.join(rj['body'])
                 self.logger.error(f'{rj["detail"]}\n{rj_body}')
             elif r.status_code == 422:
                 self.logger.error(
@@ -254,7 +254,7 @@ class PeaDaemonClient(DaemonClient):
             r = requests.delete(url=f'{self.store_api}/{id}', timeout=self.timeout)
             rj = r.json()
             if r.status_code != requests.codes.ok:
-                rj_body = '\n'.join(j for j in rj['body'])
+                rj_body = '\n'.join(rj['body'])
                 self.logger.error(
                     f'deletion for {id} failed: {rj["detail"]}\n{rj_body}'
                 )
@@ -300,9 +300,10 @@ class WorkspaceDaemonClient(PeaDaemonClient):
                 r = requests.post(
                     url=self.store_api,
                     params={'id': self._daemonize_id(id=workspace_id)},
-                    files=files if files else None,
+                    files=files or None,
                     timeout=self.timeout,
                 )
+
                 rj = r.json()
                 if r.status_code == requests.codes.created:
                     return rj
@@ -332,7 +333,7 @@ class WorkspaceDaemonClient(PeaDaemonClient):
             )
             rj = r.json()
             if r.status_code != requests.codes.ok:
-                rj_body = ''.join(j for j in rj['body'])
+                rj_body = ''.join(rj['body'])
                 self.logger.error(
                     f'deletion for {id} failed: {rj["detail"]}\n{rj_body}'
                 )

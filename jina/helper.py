@@ -474,7 +474,7 @@ def expand_dict(
                     p.__dict__[k] = SimpleNamespace()
                     _scan(v, p.__dict__[k])
                 elif isinstance(v, list):
-                    p.__dict__[k] = list()
+                    p.__dict__[k] = []
                     _scan(v, p.__dict__[k])
                 else:
                     p.__dict__[k] = v
@@ -494,16 +494,14 @@ def expand_dict(
             for k, v in sub_d.items():
                 if isinstance(v, (dict, list)):
                     _replace(v, p.__dict__[k])
-                else:
-                    if isinstance(v, str) and pat.findall(v):
-                        sub_d[k] = _sub(v, p)
+                elif isinstance(v, str) and pat.findall(v):
+                    sub_d[k] = _sub(v, p)
         elif isinstance(sub_d, List):
             for idx, v in enumerate(sub_d):
                 if isinstance(v, (dict, list)):
                     _replace(v, p[idx])
-                else:
-                    if isinstance(v, str) and pat.findall(v):
-                        sub_d[idx] = _sub(v, p)
+                elif isinstance(v, str) and pat.findall(v):
+                    sub_d[idx] = _sub(v, p)
 
     def _sub(v, p):
         if resolve_cycle_ref:
@@ -621,11 +619,7 @@ class ColorContext:
         self._bold = bold
 
     def __enter__(self):
-        if self._bold:
-            fmt_str = '\033[1;%dm'
-        else:
-            fmt_str = '\033[0;%dm'
-
+        fmt_str = '\033[1;%dm' if self._bold else '\033[0;%dm'
         c = fmt_str % (_COLORS[self._color])
         print(c, flush=True, end='')
         return self
@@ -699,12 +693,12 @@ class ArgNamespace:
         """
         if taboo is None:
             taboo = set()
-        non_defaults = {}
         _defaults = vars(parser.parse_args([]))
-        for k, v in vars(args).items():
-            if k in _defaults and k not in taboo and _defaults[k] != v:
-                non_defaults[k] = v
-        return non_defaults
+        return {
+            k: v
+            for k, v in vars(args).items()
+            if k in _defaults and k not in taboo and _defaults[k] != v
+        }
 
     @staticmethod
     def flatten_to_dict(
@@ -1004,7 +998,7 @@ def convert_tuple_to_list(d: Dict):
             convert_tuple_to_list(v)
 
 
-def is_jupyter() -> bool:  # pragma: no cover
+def is_jupyter() -> bool:    # pragma: no cover
     """
     Check if we're running in a Jupyter notebook, using magic command `get_ipython` that only available in Jupyter.
 
@@ -1015,14 +1009,7 @@ def is_jupyter() -> bool:  # pragma: no cover
     except NameError:
         return False
     shell = get_ipython().__class__.__name__  # noqa: F821
-    if shell == 'ZMQInteractiveShell':
-        return True  # Jupyter notebook or qtconsole
-    elif shell == 'Shell':
-        return True  # Google colab
-    elif shell == 'TerminalInteractiveShell':
-        return False  # Terminal running IPython
-    else:
-        return False  # Other type (?)
+    return shell in ['ZMQInteractiveShell', 'Shell']
 
 
 def run_async(func, *args, **kwargs):
@@ -1184,23 +1171,24 @@ def dunder_get(_dict: Any, key: str) -> Any:
     from google.protobuf.struct_pb2 import Struct
     from google.protobuf.pyext._message import MessageMapContainer
 
-    if isinstance(part1, int):
-        result = _dict[part1]
-    elif isinstance(_dict, (Iterable, ListValue)):
+    if (
+        not isinstance(part1, int)
+        and not isinstance(_dict, (Iterable, ListValue))
+        and isinstance(_dict, (dict, Struct, MessageMapContainer))
+        and part1 in _dict
+        or isinstance(part1, int)
+        or isinstance(_dict, (Iterable, ListValue))
+    ):
         result = _dict[part1]
     elif isinstance(_dict, (dict, Struct, MessageMapContainer)):
-        if part1 in _dict:
-            result = _dict[part1]
-        else:
-            result = None
+        result = None
     else:
         result = getattr(_dict, part1)
 
     return dunder_get(result, part2) if part2 else result
 
 
-if False:
-    from fastapi import FastAPI
+pass
 
 
 def extend_rest_interface(app: 'FastAPI') -> 'FastAPI':

@@ -105,26 +105,25 @@ class PeaDepends:
 
         :return: dict of port mappings
         """
+        # Map only "bind" ports for HEAD, TAIL & SINGLETON
+        if self.params.runtime_cls == 'ContainerRuntime':
+            # For `ContainerRuntime`, port mapping gets handled internally
+            return {}
+        if PeaRoleType.from_string(self.params.pea_role) == PeaRoleType.PARALLEL:
+            return {f'{self.params.port_ctrl}/tcp': self.params.port_ctrl}
         _mapping = {
             'port_in': 'socket_in',
             'port_out': 'socket_out',
             'port_ctrl': 'socket_ctrl',
         }
-        # Map only "bind" ports for HEAD, TAIL & SINGLETON
-        if self.params.runtime_cls == 'ContainerRuntime':
-            # For `ContainerRuntime`, port mapping gets handled internally
-            return {}
-        if PeaRoleType.from_string(self.params.pea_role) != PeaRoleType.PARALLEL:
-            return {
-                f'{getattr(self.params, i)}/tcp': getattr(self.params, i)
-                for i in self.params.__fields__
-                if i in _mapping
-                and SocketType.from_string(
-                    getattr(self.params, _mapping[i], 'PAIR_BIND')
-                ).is_bind
-            }
-        else:
-            return {f'{self.params.port_ctrl}/tcp': self.params.port_ctrl}
+        return {
+            f'{getattr(self.params, i)}/tcp': getattr(self.params, i)
+            for i in self.params.__fields__
+            if i in _mapping
+            and SocketType.from_string(
+                getattr(self.params, _mapping[i], 'PAIR_BIND')
+            ).is_bind
+        }
 
     def validate(self):
         """
@@ -191,7 +190,7 @@ class WorkspaceDepends:
     def __init__(
         self, id: Optional[DaemonID] = None, files: List[UploadFile] = File(None)
     ) -> None:
-        self.id = id if id else DaemonID('jworkspace')
+        self.id = id or DaemonID('jworkspace')
         self.files = files
 
         from ..tasks import __task_queue__

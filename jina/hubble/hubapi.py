@@ -106,11 +106,7 @@ def list_local():
 
     :return: the list of local executors (if found)
     """
-    result = []
-    for dist_name in _hub_root.glob(r'*-v*.dist-info'):
-        result.append(dist_name)
-
-    return result
+    return list(_hub_root.glob(r'*-v*.dist-info'))
 
 
 def resolve_local(uuid: str, tag: Optional[str] = None) -> Optional['Path']:

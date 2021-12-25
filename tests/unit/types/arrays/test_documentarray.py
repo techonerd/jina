@@ -70,9 +70,9 @@ def test_union(docarray, document_factory):
         doc = document_factory.create(idx, f'test {idx}')
         additional_docarray.append(doc)
     union = docarray + additional_docarray
-    for idx in range(0, 3):
+    for idx in range(3):
         assert union[idx].id == docarray[idx].id
-    for idx in range(0, 6):
+    for idx in range(6):
         assert union[idx + 3].id == additional_docarray[idx].id
 
 
@@ -83,9 +83,9 @@ def test_union_inplace(docarray, document_factory):
         additional_docarray.append(doc)
     union = deepcopy(docarray)
     union += additional_docarray
-    for idx in range(0, 3):
+    for idx in range(3):
         assert union[idx].id == docarray[idx].id
-    for idx in range(0, 6):
+    for idx in range(6):
         assert union[idx + 3].id == additional_docarray[idx].id
 
 
